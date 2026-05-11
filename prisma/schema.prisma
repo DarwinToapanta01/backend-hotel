@@ -1,0 +1,167 @@
+// prisma/schema.prisma
+// HotelBot — Esquema de base de datos
+// Arquitectura en capas: Capa de Datos
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// USUARIOS
+// ─────────────────────────────────────────
+
+enum Rol {
+  CLIENTE
+  ADMIN
+}
+
+model Usuario {
+  id        String   @id @default(uuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  telefono  String?
+  rol       Rol      @default(CLIENTE)
+  creadoEn  DateTime @default(now())
+
+  reservas  Reserva[]
+  mensajes  Mensaje[]
+
+  @@map("usuarios")
+}
+
+// ─────────────────────────────────────────
+// HABITACIONES
+// ─────────────────────────────────────────
+
+enum TipoHabitacion {
+  SIMPLE
+  DOBLE
+  SUITE
+  FAMILIAR
+}
+
+enum EstadoHabitacion {
+  DISPONIBLE
+  OCUPADA
+  LIMPIEZA
+  MANTENIMIENTO
+}
+
+model Habitacion {
+  id          String           @id @default(uuid())
+  numero      String           @unique   // Ej: "101", "202"
+  tipo        TipoHabitacion
+  estado      EstadoHabitacion @default(DISPONIBLE)
+  precioPorNoche Decimal       @db.Decimal(10, 2)
+  capacidad   Int                        // Número de personas
+  descripcion String?
+  amenidades  String[]                   // ["WiFi", "TV", "Aire acondicionado"]
+  imagenUrl   String?
+  creadoEn    DateTime         @default(now())
+  actualizadoEn DateTime       @updatedAt
+
+  reservas    Reserva[]
+
+  @@map("habitaciones")
+}
+
+// ─────────────────────────────────────────
+// RESERVAS
+// ─────────────────────────────────────────
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  ACTIVA       // El huésped ya hizo check-in
+  COMPLETADA   // Check-out realizado
+  CANCELADA
+}
+
+model Reserva {
+  id             String        @id @default(uuid())
+  usuarioId      String
+  habitacionId   String
+  fechaIngreso   DateTime
+  fechaSalida    DateTime
+  numPersonas    Int
+  estado         EstadoReserva @default(PENDIENTE)
+  precioTotal    Decimal       @db.Decimal(10, 2)
+  notas          String?
+  creadoEn       DateTime      @default(now())
+  actualizadoEn  DateTime      @updatedAt
+
+  usuario        Usuario       @relation(fields: [usuarioId], references: [id])
+  habitacion     Habitacion    @relation(fields: [habitacionId], references: [id])
+  pago           Pago?
+
+  @@map("reservas")
+}
+
+// ─────────────────────────────────────────
+// PAGOS
+// ─────────────────────────────────────────
+
+enum EstadoPago {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+}
+
+model Pago {
+  id          String      @id @default(uuid())
+  reservaId   String      @unique
+  monto       Decimal     @db.Decimal(10, 2)
+  metodo      MetodoPago
+  estado      EstadoPago  @default(PENDIENTE)
+  referencia  String?     // Código de transacción externo
+  creadoEn    DateTime    @default(now())
+
+  reserva     Reserva     @relation(fields: [reservaId], references: [id])
+
+  @@map("pagos")
+}
+
+// ─────────────────────────────────────────
+// CHATBOT — HISTORIAL DE CONVERSACIONES
+// ─────────────────────────────────────────
+
+enum RolMensaje {
+  user
+  assistant
+}
+
+model Conversacion {
+  id        String    @id @default(uuid())
+  sessionId String    @unique  // ID de sesión anónima o userId
+  creadoEn  DateTime  @default(now())
+
+  mensajes  Mensaje[]
+
+  @@map("conversaciones")
+}
+
+model Mensaje {
+  id             String      @id @default(uuid())
+  conversacionId String
+  usuarioId      String?     // Null si el usuario no está autenticado
+  rol            RolMensaje
+  contenido      String      @db.Text
+  creadoEn       DateTime    @default(now())
+
+  conversacion   Conversacion @relation(fields: [conversacionId], references: [id])
+  usuario        Usuario?     @relation(fields: [usuarioId], references: [id])
+
+  @@map("mensajes")
+}
