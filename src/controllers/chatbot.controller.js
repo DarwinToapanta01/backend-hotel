@@ -1,7 +1,6 @@
 // src/controllers/chatbot.controller.js
-// Capa de Controladores — recibe el mensaje, delega al servicio, responde
-
 import { chatbotService } from '../services/chatbot.service.js';
+import { authService } from '../services/auth.service.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export const chatbotController = {
@@ -14,10 +13,22 @@ export const chatbotController = {
         return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
       }
 
-      // Usar sessionId del cliente o generar uno nuevo
       const session = sessionId ?? uuidv4();
 
-      const reply = await chatbotService.procesarMensaje(session, message);
+      // Intentar obtener el usuario del token si viene en el header
+      let usuarioId = null;
+      const authHeader = req.headers['authorization'];
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const payload = authService.verificarToken(token);
+          usuarioId = payload.id;
+        } catch {
+          // Token inválido, continuar sin usuario
+        }
+      }
+
+      const reply = await chatbotService.procesarMensaje(session, message, usuarioId);
 
       res.json({ reply, sessionId: session });
     } catch (error) {
