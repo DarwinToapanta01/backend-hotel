@@ -13,7 +13,7 @@ import chatbotRoutes from './routes/chatbot.routes.js';
 const app = express();
 
 // Middlewares globales
-app.use(cors({ origin: 'http://localhost:5173' })); // Puerto de Vite
+app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
 // Rutas — Capa de Controladores
