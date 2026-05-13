@@ -1,4 +1,4 @@
-import { groqClient } from '../config/groq.js';
+import { xaiClient } from '../config/xai.js';
 import { chatbotRepository } from '../repositories/chatbot.repository.js';
 import { habitacionRepository } from '../repositories/habitacion.repository.js';
 import { reservaRepository } from '../repositories/reserva.repository.js';
@@ -123,9 +123,9 @@ export const chatbotService = {
       content: m.contenido,
     }));
 
-    // 7. Llamar a Groq
-    const completion = await groqClient.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+    // 7. Llamar a xAI
+    const completion = await xaiClient.chat.completions.create({
+      model: 'grok-4.3',
       messages: [
         { role: 'system', content: systemPrompt },
         ...mensajesHistorial,
