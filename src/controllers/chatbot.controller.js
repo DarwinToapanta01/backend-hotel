@@ -15,20 +15,22 @@ export const chatbotController = {
 
       const session = sessionId ?? uuidv4();
 
-      // Intentar obtener el usuario del token si viene en el header
       let usuarioId = null;
+      let usuarioRol = null;
+
       const authHeader = req.headers['authorization'];
       if (authHeader?.startsWith('Bearer ')) {
         try {
           const token = authHeader.split(' ')[1];
           const payload = authService.verificarToken(token);
           usuarioId = payload.id;
+          usuarioRol = payload.rol;
         } catch {
           // Token inválido, continuar sin usuario
         }
       }
 
-      const reply = await chatbotService.procesarMensaje(session, message, usuarioId);
+      const reply = await chatbotService.procesarMensaje(session, message, usuarioId, usuarioRol);
 
       res.json({ reply, sessionId: session });
     } catch (error) {
