@@ -8,6 +8,5 @@ export default defineConfig({
   },
   datasource: {
     url: process.env.DIRECT_URL,
-    migrateUrl: process.env.DIRECT_URL,
   },
 });
