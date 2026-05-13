@@ -41,6 +41,7 @@ export const authService = {
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
+        telefono: usuario.telefono,
       },
     };
   },
@@ -68,6 +69,36 @@ export const authService = {
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
+        telefono: usuario.telefono,
+      },
+    };
+  },
+
+  async actualizarPerfil(usuarioId, { nombre, telefono, passwordActual, nuevaPassword }) {
+    const usuario = await usuarioRepository.findById(usuarioId);
+    if (!usuario) throw new Error('Usuario no encontrado');
+
+    const dataToUpdate = {};
+    if (nombre) dataToUpdate.nombre = nombre;
+    if (telefono !== undefined) dataToUpdate.telefono = telefono;
+
+    if (passwordActual && nuevaPassword) {
+      const passwordValida = await bcrypt.compare(passwordActual, usuario.password);
+      if (!passwordValida) throw new Error('La contraseña actual es incorrecta');
+      dataToUpdate.password = await bcrypt.hash(nuevaPassword, 10);
+    }
+
+    const usuarioActualizado = await usuarioRepository.update(usuarioId, dataToUpdate);
+
+    // No generamos un nuevo token por defecto, a menos que cambie rol o email.
+    // Solo retornamos la info actualizada.
+    return {
+      usuario: {
+        id: usuarioActualizado.id,
+        nombre: usuarioActualizado.nombre,
+        email: usuarioActualizado.email,
+        rol: usuarioActualizado.rol,
+        telefono: usuarioActualizado.telefono,
       },
     };
   },
